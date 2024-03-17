@@ -1,0 +1,81 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport"
+              content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    </head>
+    <body>
+        <h1>Find your Space</h1>
+        <div class="parking-lot">
+            <div class="parking-slot" id="slot1" data-value="true">1</div>
+            <div class="parking-slot" id="slot2" data-value="true">2</div>
+            <div class="parking-slot" id="slot3" data-value="true">3</div>
+            <div class="parking-slot" id="slot4" data-value="true">4</div>
+            <div class="parking-slot" id="slot5" data-value="true">5</div>
+            <div class="parking-slot" id="slot6" data-value="true">6</div>
+            <div class="parking-slot" id="slot7" data-value="true">7</div>
+            <div class="parking-slot" id="slot8" data-value="true">8</div>
+        </div>
+        <button onclick="redirectToAnotherPage()" class="button">View Live Footage</button>
+        <script>
+  function redirectToAnotherPage() {
+    console.log("Not set");
+  }
+  const dataSocket = new WebSocket(
+    'ws://' + window.location.host + '/ws/socket/'
+  );
+
+  function parkCar(slot) {
+    const parkingSlot = document.getElementById(`slot${slot}`);
+    parkingSlot.textContent = ''; 
+    const car = document.createElement('div');
+    car.className = 'car';
+    car.innerHTML = '<img src="{% static 'images/car-icon.png' %}" alt="Car">';
+    parkingSlot.appendChild(car);
+    parkingSlot.style.backgroundColor = '#888'; // Change slot color to indicate occupancy
+    // Remove number when car is parked
+  }
+
+  function unparkCar(slot) {
+    const parkingSlot = document.getElementById(`slot${slot}`);
+    const car = parkingSlot.querySelector('.car');
+    if (car) {
+      parkingSlot.removeChild(car);
+      parkingSlot.style.backgroundColor = '#4CAF50'; // Reset slot color
+      parkingSlot.textContent = slot; // Add number back when car is unparked
+    }
+  }
+
+  dataSocket.onmessage = function(event) {
+    var n = 1;
+    var slotValue;
+    const data = JSON.parse(JSON.parse(event.data).slot_status);
+    for (let key in data) {
+      slotValue = document.getElementById(`slot${n}`).dataset.value;
+      //console.log(data[key]);
+      //console.log('slotValue', slotValue);
+      if (slotValue == data[key]) {
+        //console.log('continue')
+        n++;
+        continue;
+      }
+      if (data[key] === "true") {
+        //console.log("unparkCar");
+        unparkCar(n);
+        document.getElementById(`slot${n}`).setAttribute("data-value", "true");
+      }
+      else {
+        //console.log("parkCar");
+        parkCar(n);
+        document.getElementById(`slot${n}`).setAttribute("data-value", "false");
+      }
+      n++;
+    }
+    
+  }
+        </script>
+    </body>
+</html>
